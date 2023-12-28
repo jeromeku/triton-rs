@@ -1,10 +1,15 @@
 ### Rust Triton Kernel Minimal Example
 Minimal example of loading a `triton` kernel in `Rust`.  
 
-#### Example
-The unittests in `lib.rs` demonstrate the `API`.    
-
-A reproduction of the [`add_kernel` tutorial](https://triton-lang.org/main/getting-started/tutorials/01-vector-add.html#sphx-glr-getting-started-tutorials-01-vector-add-py):
+### Usage
+First, run a `Triton` `jit` kernel.  For example,
+```python
+pip install torch
+pip install triton
+#Run sample kernel
+python kernels/01-vector-add.py
+```
+Then in `rust`
 ```rust
 //Kernel name should match that of the @triton.jit decorated function
 let kernel = TritonKernel::new("add_kernel");
