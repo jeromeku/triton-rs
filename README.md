@@ -55,7 +55,7 @@ let c_host = dev.sync_reclaim(c_dev)?;
 assert!(c_host == expected);
 ```
 
-##### Notes
+#### Notes
 Triton appends a suffix to the original kernel name (the function decorated by `@triton.jit`) in the embedded cubin.  This name is stored in the metadata generated along with the cubin.  However, since the `cuFunction` name in the `cudarc` `load_ptx` needs to be a `static &str`, this mangled name can not be loaded at runtime.  
 
 I've hardcoded the mangled name but imagine this can be done in `build.rs`. 
