@@ -130,16 +130,20 @@ mod tests {
 
     #[test]
     fn test_kernel() -> Result<(), DriverError> {
+        //Kernel name should match that of the @triton.jit decorated function
         let kernel = TritonKernel::new("add_kernel");
-        // You can load a function from a pre-compiled PTX like so:
-        let ptx_path = &kernel.ptx()[0];
+
+        //TritonKernel will search TRITON_CACHE_DIR (~/.triton/cache on Linux systems) for the following
         let cubin_path = &kernel.cubin()[0];
         let metadata = kernel.metadata();
         let num_threads = metadata.num_warps * 32;
-        // let func_name: String = metadata.name.clone();
-        let module_name = "triton";
 
+        //Load kernel
+        //Note that loading PTX instead of CUBIN raises incompatible PTX version error for some reason.  `cudarc` supports loading ptx / cubin interchangeably since it calls to cuModuleLoad under the hood, which accepts either.
+        let module_name = "triton";
         let dev = CudaDevice::new(0)?;
+
+        //KERNEL_NAME here is the name of the embedded cuda kernel, which is the original kernel name ("add_kernel") with a suffix determined by compiler specializations.  This mangled name is available in the metadata, but `cudarc` `load_ptx` requires this to be a static string.  Need a more ergonomic way of setting the kernel func name -- currently a hard-coded static string.
         dev.load_ptx(Ptx::from_file(cubin_path), module_name, &[KERNEL_NAME])?;
         let f = dev.get_func(module_name, KERNEL_NAME).unwrap();
 
@@ -156,8 +160,10 @@ mod tests {
         let mut c_dev: CudaSlice<f32> = dev.alloc_zeros(a_host.len()).unwrap();
 
         let n = a_host.len() as u32;
+
+        let block_dim_x = n.div_ceil(num_threads);
         let cfg = LaunchConfig {
-            block_dim: (1, 1, 1),
+            block_dim: (block_dim_x, 1, 1),
             grid_dim: (num_threads, 1, 1),
             shared_mem_bytes: 0,
         };
@@ -165,7 +171,6 @@ mod tests {
 
         let c_host = dev.sync_reclaim(c_dev)?;
         assert!(c_host == expected);
-
         Ok(())
     }
 }
